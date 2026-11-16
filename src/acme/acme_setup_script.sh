@@ -67,6 +67,8 @@ source ~/.bashrc 2>/dev/null || true
 export PATH="/etc/acmesh:$PATH"
 
 # Register with Let's Encrypt
+# acme.sh defaults to ZeroSSL, so pick Let's Encrypt explicitly.
+/etc/acmesh/acme.sh --set-default-ca --server letsencrypt
 echo "📋 Registering Let's Encrypt account..."
 /etc/acmesh/acme.sh --register-account -m "$EMAIL"
 
