@@ -65,11 +65,15 @@ This script will:
 
 Existing renewal timers and cron jobs keep working afterwards. No change is needed there.
 
-If CERTInext gives you a different ACME directory URL, pass it in:
+The script looks for certificates issued from `https://acme-us.certinext.io/v1/directory` and re-issues them from that same URL. The SSL.com EAB keys select the CA, not the URL.
+
+If a certificate was last issued from the old Sectigo server, the script finds nothing and prints the server each certificate really uses. Pass that URL in:
 
 ```sh
-sudo NEW_SERVER=https://new-server.example.com/directory ./switch_to_sslcom.sh
+sudo OLD_SERVER=https://acme.sectigo.com/v2/InCommonRSAOV ./switch_to_sslcom.sh
 ```
+
+`NEW_SERVER` can be overridden the same way if CERTInext gives you a different directory URL.
 
 To roll back a failed switch, restore the backup and restart the web server:
 

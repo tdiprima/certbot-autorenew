@@ -8,14 +8,16 @@
 # re-issues every cert that came from the old server.
 #
 # Usage: sudo ./switch_to_sslcom.sh
-# Override URLs if CERTInext gives you a different one:
-#   sudo NEW_SERVER=https://... ./switch_to_sslcom.sh
+# Cert still on the old Sectigo server? Name it:
+#   sudo OLD_SERVER=https://acme.sectigo.com/v2/InCommonRSAOV ./switch_to_sslcom.sh
+# NEW_SERVER can be overridden the same way.
 # ===========================================================
 
 set -euo pipefail
 
-OLD_SERVER="${OLD_SERVER:-https://acme-us.certinext.io/v1/directory}"
-NEW_SERVER="${NEW_SERVER:-$OLD_SERVER}"
+CERTINEXT=https://acme-us.certinext.io/v1/directory
+OLD_SERVER="${OLD_SERVER:-$CERTINEXT}"
+NEW_SERVER="${NEW_SERVER:-$CERTINEXT}"
 LE_DIR=/etc/letsencrypt
 ACCT_DIR="$LE_DIR/accounts/${NEW_SERVER#https://}"
 
@@ -23,7 +25,19 @@ ACCT_DIR="$LE_DIR/accounts/${NEW_SERVER#https://}"
 command -v certbot >/dev/null || { echo "❌ certbot not found."; exit 1; }
 
 CONFS=$(grep -lF "server = $OLD_SERVER" "$LE_DIR"/renewal/*.conf 2>/dev/null || true)
-[ -n "$CONFS" ] || { echo "❌ No certs found for $OLD_SERVER. Nothing to switch."; exit 1; }
+if [ -z "$CONFS" ]; then
+    echo "❌ No certs found for $OLD_SERVER."
+    echo "   Servers your certs actually use (file: server):"
+    SERVERS=$(cd "$LE_DIR/renewal" 2>/dev/null && grep -H '^server = ' -- *.conf 2>/dev/null || true)
+    if [ -n "$SERVERS" ]; then
+        echo "$SERVERS" | sed 's|^|   |'
+    else
+        echo "   (none: no certbot renewal files in $LE_DIR/renewal, so certbot does not manage a cert here)"
+    fi
+    echo "   Re-run with that URL:"
+    echo "   sudo OLD_SERVER=<url from above> $0"
+    exit 1
+fi
 
 echo "📋 Certs to switch:"
 echo "$CONFS" | sed 's|.*/||; s|\.conf$||; s|^|   |'
